@@ -7,6 +7,8 @@
 
 
 #pragma config PWMLOCK = OFF
+#pragma config ICS = PGD3
+#pragma config JTAGEN = OFF
 
 #include <xc.h>
 #include <stdio.h>
@@ -41,16 +43,26 @@ int main(void) {
      * 10 - HIN3 / 11 - LIN3 / 12 - HIN2 / 13 - LIN2 / 14 - HIN1 / 15 - LIN1
      * HC - 8    / HB - 7    / HA - 6
      */
-    
+
     // Config IO PORTB
     TRISB = 0x0000;
     ANSELB = 0x0000;
-    set_pb_output(POS_A);
+    PORTB = 0b0000000000000000;
+
+    // three-gate enable
+    TRISAbits.TRISA7 = 0;
+    PORTAbits.RA7 = 1;
+
+    // Set PORTB output for edge trigger
+    PORTB = 0b1001100000000000;
+    // PORTB = 0b0000000000000000;
+
+    // set_pb_output(POS_A);
     
     // Config PWM
-    // init_pwm();
-    // set_pwm_output(POS_A);
-    // set_pwm_duty();
+    set_pwm_output(POS_A);
+    init_pwm();
+    set_pwm_duty(PTPER / 2);
 
     // Config IO PORTC and CN
     TRISC |= 0b0000000111000000;
@@ -62,6 +74,8 @@ int main(void) {
     // Enable global interrupt
     INTCON1bits.NSTDIS = 1;
     INTCON2bits.GIE = 1;
+
+    while(1);
     
     return (EXIT_SUCCESS);
 }
@@ -86,7 +100,7 @@ void __attribute__((__interrupt__,no_auto_psv)) _CNInterrupt(void) {
     // Covert ctrl to PORTB output
     // 15 LIN1 / 14 HIN1 / 13 LIN2 / 12 HIN2 / 11 LIN3 / 10 HIN3
     set_pb_output(next_ctrl);
-    // set_pwm_output(next_ctrl);
+    set_pwm_output(next_ctrl);
     
 	IFS1bits.CNIF = 0;
 }
